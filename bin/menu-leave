@@ -1,0 +1,6 @@
+#!/bin/sh
+
+case "$(echo "Shutdown\nReboot" | $(dirname $(realpath $0))/menu)" in
+    Shutdown) poweroff;;
+    Reboot) reboot;;
+esac

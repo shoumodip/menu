@@ -1,0 +1,2 @@
+#!/bin/sh
+echo $PATH | tr ':' ' ' | xargs -n 1 ls 2>/dev/null | $(dirname $(realpath $0))/menu | $SHELL &

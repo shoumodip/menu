@@ -1,0 +1,19 @@
+#!/bin/sh
+
+menu="$(dirname $(realpath $0))/menu"
+menu_sudo="$(dirname $(realpath $0))/menu-sudo"
+
+devices="$(lsblk -pro "name,type,size,mountpoint" \
+    | grep -v crypto_LUKS \
+    | grep 'part\|rom' \
+    | sed 's/ /:/g' \
+    | awk -F ':' '$4 == "" {print $1 " ("$3 ") "}')"
+[ -z "$devices" ] && exit
+
+usb="$(echo "$devices" | $menu)"
+[ -z "$usb" ] && exit
+
+location="$(ls $HOME | $menu)"
+[ -z "$location" ] && exit
+
+SUDO_ASKPASS="$menu_sudo" sudo -A mount "$(echo "$usb" | cut -d ' ' -f 1)" "$HOME/$location"

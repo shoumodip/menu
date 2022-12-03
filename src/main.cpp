@@ -3,11 +3,12 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 
-#define PEN_START 18
-#define HOR_PADDING 0.2
-#define VER_PADDING 0.2
+#define GAP 6
+#define PADDING 0.2
+#define PEN_START (18+GAP)
 
-#define HIGHLIGHT_COLOR 0xff3c3836
+#define HIGHLIGHT_COLOR 0xfffe8019
+#define SEARCHBAR_COLOR 0xff3c3836
 #define FOREGROUND_COLOR 0xffebdbb2
 #define BACKGROUND_COLOR 0xff282828
 
@@ -149,8 +150,9 @@ struct Menu {
     int pen;
     XftFont *font;
     XftDraw *draw;
-    XftColor color;
     size_t items_shown;
+    XftColor default_color;
+    XftColor current_color;
 
     Line input;
     size_t current;
@@ -177,10 +179,10 @@ struct Menu {
             panic("cannot get root window attributes");
         }
 
-        width = root_attr.width * (1.0 - (HOR_PADDING * 2));
-        height = font->ascent + font->descent;
+        width = root_attr.width * (1.0 - (PADDING * 2));
+        height = font->ascent + font->descent + GAP;
 
-        items_shown = root_attr.height * (1.0 - (VER_PADDING * 2)) / height;
+        items_shown = root_attr.height * (1.0 - (PADDING * 2)) / height;
 
         XSetWindowAttributes menu_attr;
         menu_attr.override_redirect = True;
@@ -189,13 +191,11 @@ struct Menu {
 
         menu = XCreateWindow(
             display, root,
-            root_attr.width * HOR_PADDING, root_attr.height * VER_PADDING,
-            width, height * (items_shown + 1),
-            1, CopyFromParent, CopyFromParent, CopyFromParent,
+            root_attr.width * PADDING, root_attr.height * PADDING,
+            width, height * (items_shown + 1) + GAP,
+            0, CopyFromParent, CopyFromParent, CopyFromParent,
             CWOverrideRedirect | CWBackPixel | CWEventMask,
             &menu_attr);
-
-        XSetWindowBorder(display, menu, HIGHLIGHT_COLOR);
 
         XGrabKeyboard(display, DefaultRootWindow(display), True, GrabModeAsync, GrabModeAsync, CurrentTime);
         XMapRaised(display, menu);
@@ -203,8 +203,8 @@ struct Menu {
         gc = DefaultGC(display, screen);
         draw = XftDrawCreate(display, menu, DefaultVisual(display, 0), DefaultColormap(display, 0));
 
-        color = hex_to_color(display, HIGHLIGHT_COLOR);
-        color = hex_to_color(display, FOREGROUND_COLOR);
+        current_color = hex_to_color(display, HIGHLIGHT_COLOR);
+        default_color = hex_to_color(display, FOREGROUND_COLOR);
 
         current = 0;
         for (std::string line; std::getline(std::cin, line); ) {
@@ -216,40 +216,37 @@ struct Menu {
 
     ~Menu()
     {
-        XftColorFree(display, DefaultVisual(display, 0), DefaultColormap(display, 0), &color);
+        XftColorFree(display, DefaultVisual(display, 0), DefaultColormap(display, 0), &current_color);
+        XftColorFree(display, DefaultVisual(display, 0), DefaultColormap(display, 0), &default_color);
         XDestroyWindow(display, menu);
         XCloseDisplay(display);
     }
 
-    void line(const char *data, size_t count)
+    void line(const char *data, size_t count, XftColor *color)
     {
-        XftDrawString8(draw, &color, font, 0, pen, (XftChar8 *) data, count);
+        XftDrawString8(draw, color, font, 0, pen, (XftChar8 *) data, count);
         pen += height;
     }
 
     void render()
     {
         XClearWindow(display, menu);
-
         pen = PEN_START;
-        line(input.str.data(), std::min(input.str.size(), width / font->max_advance_width));
+
+        XSetForeground(display, gc, SEARCHBAR_COLOR);
+        XFillRectangle(display, menu, gc, 0, 0, width, height + GAP);
+        line(input.str.data(), std::min(input.str.size(), width / font->max_advance_width), &default_color);
+        pen += GAP/2;
 
         for (size_t i = current - current % items_shown, count = 0; i < matches.size(); ++i) {
-            auto& match = matches[i];
-            if (i == current) {
-                XSetForeground(display, gc, HIGHLIGHT_COLOR);
-                XFillRectangle(display, menu, gc, 0, pen - PEN_START, width, height);
-            }
-
-            line(match.str.data(), match.count);
-
+            line(matches[i].str.data(), matches[i].count, i == current ? &current_color : &default_color);
             if (++count == items_shown) {
                 break;
             }
         }
 
         XSetForeground(display, gc, FOREGROUND_COLOR);
-        XFillRectangle(display, menu, gc, input.pos * font->max_advance_width, 0, 1, height);
+        XFillRectangle(display, menu, gc, input.pos * font->max_advance_width, GAP, 1, height - GAP);
     }
 
     void update()
@@ -365,7 +362,7 @@ struct Menu {
     }
 };
 
-int main(void)
+int main()
 {
     Menu().start();
 }

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+menu="$(dirname $(realpath $0))/menu"
+menu_sudo="$(dirname $(realpath $0))/menu-sudo"
+
+devices="$(lsblk -pro "name,mountpoint" \
+    | sed "s|$HOME|~|" \
+    | awk '/~/ {print $1 " (" $2 ")"}')"
+[ -z "$devices" ] && exit
+
+usb="$(echo "$devices" | $menu)"
+[ -z "$usb" ] && exit
+
+SUDO_ASKPASS="$menu_sudo" sudo -A umount "$(echo "$usb" | cut -d ' ' -f 1)"

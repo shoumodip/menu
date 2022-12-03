@@ -1,14 +1,22 @@
 # Menu
 Selection Menu in C++
 
-![Menu](menu.png)
+![Menu](img/menu.png)
 
 ## Quick Start
 ```console
 $ sudo apt install build-essential libx11-dev libxft-dev
 $ ./build.sh
-$ ls ~ | ./menu
+$ ls ~ | ./bin/menu
 ```
+
+## Scripts
+| Name              | Description            |
+| ----------------- | ---------------------- |
+| `bin/menu-launch` | Launch commands        |
+| `bin/menu-mount`  | Mount USB devices      |
+| `bin/menu-umount` | Unmount USB devices    |
+| `bin/menu-leave`  | Shutdown/Reboot dialog |
 
 ## Keybindings
 | Key                    | Description                               |
