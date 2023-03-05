@@ -6,9 +6,9 @@
 #define FONT "Monospace:size=14"
 #define ITEMS 10
 
-#define HIGHLIGHT_COLOR 0xFF073655
-#define FOREGROUND_COLOR 0xFFD4D4D4
-#define BACKGROUND_COLOR 0xFF1E1E1E
+#define HIGHLIGHT_COLOR 0xFF3E4452
+#define FOREGROUND_COLOR 0xFFABB2BF
+#define BACKGROUND_COLOR 0xFF282C34
 
 void panic(const char *message) {
     std::cerr << "error: " << message << std::endl;
@@ -24,14 +24,16 @@ struct Menu {
     GC gc;
     int width;
     Window window;
+    Visual *visual;
     Display *display;
+    Colormap colormap;
 
     XftDraw *draw;
     XftFont *font;
     XftColor color;
     int font_height;
 
-    Menu(const char *font_name) {
+    Menu() {
         for (std::string line; std::getline(std::cin, line); ) {
             items.push_back(line);
         }
@@ -44,7 +46,7 @@ struct Menu {
         auto screen = DefaultScreen(display);
         auto root = RootWindow(display, screen);
 
-        font = XftFontOpenName(display, screen, font_name);
+        font = XftFontOpenName(display, screen, FONT);
         if (!font) {
             panic("cannot open font");
         }
@@ -72,8 +74,8 @@ struct Menu {
         XGrabKeyboard(display, root, True, GrabModeAsync, GrabModeAsync, CurrentTime);
         XMapRaised(display, window);
 
-        auto visual = DefaultVisual(display, 0);
-        auto colormap = DefaultColormap(display, 0);
+        visual = DefaultVisual(display, 0);
+        colormap = DefaultColormap(display, 0);
 
         gc = DefaultGC(display, screen);
         draw = XftDrawCreate(display, window, visual, colormap);
@@ -86,6 +88,12 @@ struct Menu {
         XftColorAllocValue(display, visual, colormap, &render_color, &color);
 
         update();
+    }
+
+    ~Menu() {
+        XftColorFree(display, visual, colormap, &color);
+        XDestroyWindow(display, window);
+        XCloseDisplay(display);
     }
 
     void draw_line(std::string& str, int& y) {
@@ -192,6 +200,6 @@ struct Menu {
     }
 };
 
-int main(int argc, char **argv) {
-    Menu(argc > 1 ? argv[1] : FONT).run();
+int main() {
+    Menu().run();
 }
