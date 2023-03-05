@@ -1,8 +1,6 @@
 # Menu
 Selection Menu in C++
 
-![Shot](shot.png)
-
 ## Quick Start
 Depends on X11 and Xft.
 
