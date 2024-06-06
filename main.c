@@ -149,6 +149,9 @@ typedef struct {
   int font_height;
   int item_height;
   int window_width;
+
+  int revert_return;
+  Window revert_window;
 } App;
 
 int app_text_size(App *a, const char *data, size_t count) {
@@ -172,6 +175,7 @@ void app_free(App *a) {
   }
 
   if (a->display) {
+    XSetInputFocus(a->display, a->revert_window, a->revert_return, CurrentTime);
     XftColorFree(a->display, a->visual, a->colormap, &a->colors[0]);
     XftColorFree(a->display, a->visual, a->colormap, &a->colors[1]);
     XDestroyWindow(a->display, a->window);
@@ -224,6 +228,9 @@ int app_init(App *a) {
     XSetWindowBorder(a->display, a->window, HIGHLIGHT_COLOR);
     XGrabKeyboard(a->display, root, True, GrabModeAsync, GrabModeAsync, CurrentTime);
     XMapRaised(a->display, a->window);
+
+    XGetInputFocus(a->display, &a->revert_window, &a->revert_return);
+    XSetInputFocus(a->display, a->window, RevertToParent, CurrentTime);
   }
 
   // Create Renderer
