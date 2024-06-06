@@ -4,7 +4,7 @@ Selection Menu in C
 ## Quick Start
 ```console
 $ ./build.sh
-$ ls | ./menu
+$ ls | bin/menu
 ```
 
 ## Dependencies
