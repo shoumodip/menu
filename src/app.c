@@ -22,7 +22,7 @@ int app_init(App *a) {
   }
 
   {
-    a->font = XftFontOpenName(a->display, DefaultScreen(a->display), FONT);
+    a->font = XftFontOpenName(a->display, 0, FONT);
     if (!a->font) {
       fprintf(stderr, "Error: could not open font\n");
       return 0;
@@ -81,7 +81,7 @@ int app_init(App *a) {
     XRenderColor foreground_color = render_color(FOREGROUND_COLOR);
     XftColorAllocValue(a->display, a->visual, a->colormap, &foreground_color, &a->colors[1]);
 
-    a->gc = DefaultGC(a->display, DefaultScreen(a->display));
+    a->gc = DefaultGC(a->display, 0);
     a->draw = XftDrawCreate(a->display, a->window, a->visual, a->colormap);
     if (!a->draw) {
       fprintf(stderr, "Error: could not create Xft draw object\n");
