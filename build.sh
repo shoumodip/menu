@@ -7,4 +7,4 @@ if [ ! -f $FLAGS ]; then
   pkg-config --cflags $LIBS | tr -s ' ' '\n' > $FLAGS
 fi
 
-cc `cat $FLAGS` -o bin/menu main.c `pkg-config --libs $LIBS`
+cc `cat $FLAGS` -o bin/menu src/*.c `pkg-config --libs $LIBS`
