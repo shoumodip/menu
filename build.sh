@@ -5,6 +5,5 @@ set -xe
 LIBS="x11 xft freetype2"
 FLAGS="compile_flags.txt"
 
-[ -f $FLAGS ] || pkg-config --cflags $LIBS | tr -s ' ' '\n' > $FLAGS
-
+pkg-config --cflags $LIBS | tr -s ' ' '\n' > $FLAGS
 cc `cat $FLAGS` -o bin/menu src/*.c `pkg-config --libs $LIBS`
