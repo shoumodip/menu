@@ -1,19 +1,8 @@
 #!/bin/sh
 
-list_exec() {
-  CACHE_PATH=~/.cache/menucache
-
-  IFS=:
-  if stest -dqr -n $CACHE_PATH $PATH 2>/dev/null; then
-    stest -flx $PATH | sort -u | tee $CACHE_PATH
-  else
-    cat $CACHE_PATH
-  fi
-}
-
 if [ -z $1 ]; then
-  echo "Usage: menurun <path-to-menu-executable>"
+  echo "Usage: $0 <path-to-menu-executable>"
   exit 1
 fi
 
-list_exec | $1 | sh &
+echo $PATH | xargs -d ":" -n 1 ls 2>/dev/null | $1 | sh &
