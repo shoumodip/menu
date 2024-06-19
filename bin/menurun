@@ -1,8 +1,3 @@
 #!/bin/sh
 
-if [ -z $1 ]; then
-  echo "Usage: $0 <path-to-menu-executable>"
-  exit 1
-fi
-
-echo $PATH | xargs -d ":" -n 1 ls 2>/dev/null | $1 | sh &
+echo $PATH | xargs -d ":" -n 1 ls 2>/dev/null | sort -u | ${1:-$(dirname $(realpath $0))/menu} | sh &
