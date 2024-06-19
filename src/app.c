@@ -12,6 +12,26 @@
   })
 
 int app_init(App *a) {
+  // Read Items
+  {
+    while (!feof(stdin)) {
+      da_append_many(&a->buffer, NULL, 1024);
+      a->buffer.count += fread(a->buffer.data + a->buffer.count, sizeof(char), 1024, stdin);
+    }
+
+    Str contents = str_new(a->buffer.data, a->buffer.count);
+    while (contents.size) {
+      Str line = str_split(&contents, '\n');
+      if (line.size) {
+        da_append(&a->items, line);
+      }
+    }
+
+    if (a->items.count == 0) {
+      return 0;
+    }
+  }
+
   // Initialize X11
   {
     a->display = XOpenDisplay(NULL);
@@ -48,21 +68,20 @@ int app_init(App *a) {
       return 0;
     }
     a->window_width = ra.width * 0.6;
+    a->window_height = a->item_height * (ITEMS + 1) + BORDER * 2;
 
     XSetWindowAttributes wa = {0};
     wa.override_redirect = True;
     wa.background_pixel = BACKGROUND_COLOR;
     wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
 
-    int h = a->item_height * (ITEMS + 1);
     int x = (ra.width - a->window_width) / 2;
-    int y = (ra.height - h) / 2;
+    int y = (ra.height - a->window_height) / 2;
 
-    a->window =
-      XCreateWindow(a->display, root, x, y, a->window_width, h, 2, CopyFromParent, CopyFromParent,
-                    CopyFromParent, CWOverrideRedirect | CWBackPixel | CWEventMask, &wa);
+    a->window = XCreateWindow(a->display, root, x, y, a->window_width, a->window_height, 0,
+                              CopyFromParent, CopyFromParent, CopyFromParent,
+                              CWOverrideRedirect | CWBackPixel | CWEventMask, &wa);
 
-    XSetWindowBorder(a->display, a->window, HIGHLIGHT_COLOR);
     XGrabKeyboard(a->display, root, True, GrabModeAsync, GrabModeAsync, CurrentTime);
     XMapRaised(a->display, a->window);
 
@@ -82,26 +101,12 @@ int app_init(App *a) {
     XftColorAllocValue(a->display, a->visual, a->colormap, &foreground_color, &a->colors[1]);
 
     a->gc = DefaultGC(a->display, 0);
+    XSetLineAttributes(a->display, a->gc, BORDER, LineSolid, CapRound, JoinRound);
+
     a->draw = XftDrawCreate(a->display, a->window, a->visual, a->colormap);
     if (!a->draw) {
       fprintf(stderr, "Error: could not create Xft draw object\n");
       return 0;
-    }
-  }
-
-  // Read Items
-  {
-    while (!feof(stdin)) {
-      da_append_many(&a->buffer, NULL, 1024);
-      a->buffer.count += fread(a->buffer.data + a->buffer.count, sizeof(char), 1024, stdin);
-    }
-
-    Str contents = str_new(a->buffer.data, a->buffer.count);
-    while (contents.size) {
-      Str line = str_split(&contents, '\n');
-      if (line.size) {
-        da_append(&a->items, line);
-      }
     }
   }
 
@@ -145,7 +150,11 @@ void app_line(App *a, int x, int y, Str str, XftColor *color) {
 void app_draw(App *a) {
   XClearWindow(a->display, a->window);
 
-  int y = 0;
+  XSetForeground(a->display, a->gc, HIGHLIGHT_COLOR);
+  XDrawRectangle(a->display, a->window, a->gc, BORDER / 2, BORDER / 2, a->window_width - BORDER,
+                 a->window_height - BORDER);
+
+  int y = BORDER;
   int prompt_width = 0;
   for (size_t i = 0; i < a->prompt.count; i++) {
     prompt_width += a->font_widths[a->prompt.data[i] - 32];
@@ -154,27 +163,29 @@ void app_draw(App *a) {
   int matches_found = a->items.count && !a->fzy.matches.count;
   if (matches_found) {
     XSetForeground(a->display, a->gc, NOMATCH_COLOR);
-    XFillRectangle(a->display, a->window, a->gc, 0, 0, prompt_width, a->item_height);
+    XFillRectangle(a->display, a->window, a->gc, BORDER * 2, BORDER, prompt_width, a->item_height);
   }
-  app_line(a, 0, y, str_new(a->prompt.data, a->prompt.count), &a->colors[!matches_found]);
+  app_line(a, BORDER * 2, y, str_new(a->prompt.data, a->prompt.count), &a->colors[!matches_found]);
 
   int item_offset = (a->item_height - a->font_height) / 2;
   XSetForeground(a->display, a->gc, FOREGROUND_COLOR);
-  XFillRectangle(a->display, a->window, a->gc, prompt_width + 1, item_offset, 1, a->font_height);
+  XFillRectangle(a->display, a->window, a->gc, prompt_width + BORDER * 2 + 1, item_offset + BORDER,
+                 1, a->font_height);
 
   if (a->fzy.matches.count) {
     size_t begin = a->current - a->current % ITEMS;
 
     XSetForeground(a->display, a->gc, HIGHLIGHT_COLOR);
-    XFillRectangle(a->display, a->window, a->gc, 0, (a->current + 1 - begin) * a->item_height,
-                   a->window_width, a->item_height);
+    XFillRectangle(a->display, a->window, a->gc, 0,
+                   (a->current + 1 - begin) * a->item_height + BORDER, a->window_width,
+                   a->item_height);
 
     y += a->item_height;
     for (size_t i = 0; i < min(a->fzy.matches.count - begin, ITEMS); ++i) {
       Match match = a->fzy.matches.data[begin + i];
-      app_line(a, 0, y, match.str, &a->colors[1]);
+      app_line(a, BORDER * 2, y, match.str, &a->colors[1]);
 
-      for (size_t j = 0, p = 0, x = 0; j < a->prompt.count; j++) {
+      for (size_t j = 0, p = 0, x = BORDER * 2; j < a->prompt.count; j++) {
         size_t k = match.positions[j];
         while (p < k) {
           x += a->font_widths[match.str.data[p++] - 32];

@@ -29,6 +29,7 @@ typedef struct {
 
   int item_height;
   int window_width;
+  int window_height;
 
   int revert_return;
   Window revert_window;

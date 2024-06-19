@@ -3,6 +3,7 @@
 
 #define FONT "JetBrains Mono:pixelsize=17"
 #define ITEMS 10
+#define BORDER 2
 
 #define MATCH_COLOR 0xFFA9B665
 #define NOMATCH_COLOR 0xFFEA6962
