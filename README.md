@@ -11,7 +11,7 @@ $ ls | bin/menu
 Depends on X11, Xft and Freetype
 
 ```console
-$ sudo apt install libx11-dev libxft-dev libfreetype-dev
+$ sudo apt install libx11-dev libxft-dev
 ```
 
 ## Keybindings
