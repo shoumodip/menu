@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define FONT "JetBrains Mono:pixelsize=17"
+#define FONT "Iosevka:size=14"
 #define ITEMS 10
 #define BORDER 2
 
