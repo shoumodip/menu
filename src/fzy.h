@@ -5,18 +5,18 @@
 #include "str.h"
 
 typedef struct {
-  Str str;
-  double score;
-  size_t *positions;
+    Str str;
+    double score;
+    size_t *positions;
 } Match;
 
 typedef struct {
-  DynamicArray(double) B;
-  DynamicArray(double) D;
-  DynamicArray(double) M;
+    DynamicArray(double) B;
+    DynamicArray(double) D;
+    DynamicArray(double) M;
 
-  DynamicArray(Match) matches;
-  DynamicArray(size_t) positions;
+    DynamicArray(Match) matches;
+    DynamicArray(size_t) positions;
 } Fzy;
 
 void fzy_init(void);

@@ -4,8 +4,8 @@
 #include <stddef.h>
 
 typedef struct {
-  const char *data;
-  size_t size;
+    const char *data;
+    size_t size;
 } Str;
 
 #define str_new(d, s) ((Str){.data = (d), .size = (s)})

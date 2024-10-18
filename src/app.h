@@ -7,32 +7,32 @@
 #include "fzy.h"
 
 typedef struct {
-  size_t current;
-  DynamicArray(Str) items;
-  DynamicArray(char) buffer;
-  DynamicArray(char) prompt;
+    size_t current;
+    DynamicArray(Str) items;
+    DynamicArray(char) buffer;
+    DynamicArray(char) prompt;
 
-  Fzy fzy;
+    Fzy fzy;
 
-  GC gc;
-  Window window;
-  Visual *visual;
-  Display *display;
-  Colormap colormap;
+    GC gc;
+    Window window;
+    Visual *visual;
+    Display *display;
+    Colormap colormap;
 
-  XftDraw *draw;
-  XftFont *font;
-  XftColor colors[2];
+    XftDraw *draw;
+    XftFont *font;
+    XftColor colors[2];
 
-  int font_height;
-  int font_widths[127 - 32];
+    int font_height;
+    int font_widths[127 - 32];
 
-  int item_height;
-  int window_width;
-  int window_height;
+    int item_height;
+    int window_width;
+    int window_height;
 
-  int revert_return;
-  Window revert_window;
+    int revert_return;
+    Window revert_window;
 } App;
 
 int app_init(App *a);
