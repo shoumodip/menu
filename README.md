@@ -21,6 +21,7 @@ $ sudo apt install libx11-dev libxft-dev
 | <kbd>C-c</kbd> | Quit |
 | <kbd>Enter</kbd> | Accept selected match |
 | <kbd>Backspace</kbd> | Delete a character left of the cursor |
+| <kbd>A-Backspace</kbd> | Delete a word left of the cursor |
 | <kbd>C-n</kbd> | Select the next match |
 | <kbd>Tab</kbd> | Select the next match |
 | <kbd>C-p</kbd> | Select the previous match |

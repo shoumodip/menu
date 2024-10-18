@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include "app.h"
 #include "config.h"
 
@@ -309,7 +311,19 @@ void app_loop(App *a) {
 
                 case XK_BackSpace:
                     if (a->prompt.count) {
-                        a->prompt.count--;
+                        if (event.xkey.state & Mod1Mask) {
+                            while (a->prompt.count &&
+                                   !isalnum(a->prompt.data[a->prompt.count - 1])) {
+                                a->prompt.count--;
+                            }
+
+                            while (a->prompt.count &&
+                                   isalnum(a->prompt.data[a->prompt.count - 1])) {
+                                a->prompt.count--;
+                            }
+                        } else {
+                            a->prompt.count--;
+                        }
                         app_sync(a);
                     }
                     break;
