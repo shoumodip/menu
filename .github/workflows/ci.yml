@@ -14,6 +14,7 @@ jobs:
 
       - name: Build
         run: |
+          sudo apt install libxft-dev
           ./build.sh
 
       - name: Create GitHub Release
