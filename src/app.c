@@ -62,7 +62,7 @@ int app_init(App *a) {
 
     // Create Window
     {
-        Window root = DefaultRootWindow(a->display);
+        const Window root = DefaultRootWindow(a->display);
 
         XWindowAttributes ra = {0};
         if (!XGetWindowAttributes(a->display, root, &ra)) {
@@ -101,6 +101,8 @@ int app_init(App *a) {
 
         XGetInputFocus(a->display, &a->revert_window, &a->revert_return);
         XSetInputFocus(a->display, a->window, RevertToParent, CurrentTime);
+
+        XSelectInput(a->display, root, SubstructureNotifyMask);
     }
 
     // Create Renderer
@@ -271,6 +273,18 @@ void app_loop(App *a) {
 
         case FocusOut:
             XSetInputFocus(a->display, a->window, RevertToParent, CurrentTime);
+            break;
+
+        case VisibilityNotify:
+            if (((XVisibilityEvent *)&event)->state != VisibilityUnobscured) {
+                XRaiseWindow(a->display, a->window);
+            }
+            break;
+
+        case ConfigureNotify:
+            if (((XConfigureEvent *)&event)->window != a->window) {
+                XRaiseWindow(a->display, a->window);
+            }
             break;
 
         case KeyPress: {
