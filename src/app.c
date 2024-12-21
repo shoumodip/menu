@@ -75,7 +75,8 @@ int app_init(App *a) {
         XSetWindowAttributes wa = {0};
         wa.override_redirect = True;
         wa.background_pixel = BACKGROUND_COLOR;
-        wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | FocusChangeMask;
+        wa.event_mask = ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
+                        KeyPressMask | VisibilityChangeMask | FocusChangeMask;
 
         int x = (ra.width - a->window_width) / 2;
         int y = (ra.height - a->window_height) / 2;
@@ -301,6 +302,37 @@ void app_loop(App *a) {
                 XRaiseWindow(a->display, a->window);
             }
             break;
+
+        case ButtonPress:
+            switch (event.xbutton.button) {
+            case Button4:
+                app_prev(a);
+                break;
+
+            case Button5:
+                app_next(a);
+                break;
+            }
+            break;
+
+        case ButtonRelease:
+            if (event.xbutton.button == Button1) {
+                const size_t index = event.xbutton.y / a->item_height;
+                if (index && a->anchor + index < a->fzy.matches.count + 1) {
+                    Str current = a->fzy.matches.data[a->anchor + index - 1].str;
+                    printf("%.*s\n", (int)current.size, current.data);
+                    return;
+                }
+            }
+            break;
+
+        case MotionNotify: {
+            const size_t index = event.xmotion.y / a->item_height;
+            if (index && a->anchor + index < a->fzy.matches.count + 1) {
+                a->current = a->anchor + index - 1;
+                app_draw(a);
+            }
+        } break;
 
         case KeyPress: {
             KeySym key = XLookupKeysym(&event.xkey, 0);

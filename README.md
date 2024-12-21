@@ -26,3 +26,6 @@ $ sudo apt install libx11-dev libxft-dev
 | <kbd>Tab</kbd> | Select the next match |
 | <kbd>C-p</kbd> | Select the previous match |
 | <kbd>S-Tab</kbd> | Select the previous match |
+
+## Mouse
+The mouse behaves as expected
