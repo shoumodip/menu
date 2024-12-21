@@ -7,6 +7,7 @@
 #include "fzy.h"
 
 typedef struct {
+    size_t anchor;
     size_t current;
     DynamicArray(Str) items;
     DynamicArray(char) buffer;

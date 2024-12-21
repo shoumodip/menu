@@ -201,21 +201,19 @@ void app_draw(App *a) {
         a->font_height);
 
     if (a->fzy.matches.count) {
-        size_t begin = a->current - a->current % ITEMS;
-
         XSetForeground(a->display, a->gc, HIGHLIGHT_COLOR);
         XFillRectangle(
             a->display,
             a->window,
             a->gc,
             0,
-            (a->current + 1 - begin) * a->item_height + PADDING,
+            (a->current + 1 - a->anchor) * a->item_height + PADDING,
             a->window_width,
             a->item_height);
 
         y += a->item_height;
-        for (size_t i = 0; i < min(a->fzy.matches.count - begin, ITEMS); ++i) {
-            Match match = a->fzy.matches.data[begin + i];
+        for (size_t i = 0; i < min(a->fzy.matches.count - a->anchor, ITEMS); ++i) {
+            Match match = a->fzy.matches.data[a->anchor + i];
             app_line(a, PADDING * 2, y, match.str, &a->colors[1]);
 
             for (size_t j = 0, p = 0, x = PADDING * 2; j < a->prompt.count; j++) {
@@ -237,6 +235,7 @@ void app_draw(App *a) {
 }
 
 void app_sync(App *a) {
+    a->anchor = 0;
     a->current = 0;
     fzy_filter(&a->fzy, str_new(a->prompt.data, a->prompt.count), a->items.data, a->items.count);
     app_draw(a);
@@ -248,6 +247,14 @@ void app_next(App *a) {
         if (a->current == a->fzy.matches.count) {
             a->current = 0;
         }
+
+        if (a->current >= a->anchor + ITEMS) {
+            a->anchor = a->current - ITEMS + 1;
+        }
+
+        if (a->current < a->anchor) {
+            a->anchor = a->current;
+        }
         app_draw(a);
     }
 }
@@ -258,6 +265,14 @@ void app_prev(App *a) {
             a->current = a->fzy.matches.count - 1;
         } else {
             a->current -= 1;
+        }
+
+        if (a->current >= a->anchor + ITEMS) {
+            a->anchor = a->current - ITEMS + 1;
+        }
+
+        if (a->current < a->anchor) {
+            a->anchor = a->current;
         }
         app_draw(a);
     }
