@@ -20,6 +20,7 @@ $ sudo apt install libx11-dev libxft-dev
 | <kbd>Escape</kbd> | Quit |
 | <kbd>C-c</kbd> | Quit |
 | <kbd>Enter</kbd> | Accept selected match |
+| <kbd>C-j</kbd> | Accept the prompt |
 | <kbd>Backspace</kbd> | Delete a character left of the cursor |
 | <kbd>A-Backspace</kbd> | Delete a word left of the cursor |
 | <kbd>C-n</kbd> | Select the next match |

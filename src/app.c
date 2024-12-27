@@ -348,6 +348,12 @@ void app_loop(App *a) {
                 case 'p':
                     app_prev(a);
                     break;
+
+                case 'j':
+                    if (a->prompt.count) {
+                        printf("%.*s\n", (int)a->prompt.count, a->prompt.data);
+                    }
+                    return;
                 }
             } else {
                 switch (key) {
