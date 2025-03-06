@@ -6,7 +6,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 #define render_color(c)                                                                            \
-    ((XRenderColor){                                                                               \
+    ((XRenderColor) {                                                                              \
         .red = (((c) >> (2 * 8)) & 0xFF) << 8,                                                     \
         .green = (((c) >> (1 * 8)) & 0xFF) << 8,                                                   \
         .blue = (((c) >> (0 * 8)) & 0xFF) << 8,                                                    \
@@ -52,7 +52,7 @@ int app_init(App *a) {
 
         for (char ch = 32; ch < 127; ch++) {
             XGlyphInfo extents = {0};
-            XftTextExtentsUtf8(a->display, a->font, (const FcChar8 *)&ch, 1, &extents);
+            XftTextExtentsUtf8(a->display, a->font, (const FcChar8 *) &ch, 1, &extents);
             a->font_widths[ch - 32] = extents.xOff;
         }
 
@@ -70,7 +70,7 @@ int app_init(App *a) {
             return 0;
         }
         a->window_width = ra.width * 0.6;
-        a->window_height = a->item_height * (ITEMS + 1) + PADDING * 2;
+        a->window_height = a->item_height * (ITEMS + 1) + BORDER * 2;
 
         XSetWindowAttributes wa = {0};
         wa.override_redirect = True;
@@ -88,14 +88,12 @@ int app_init(App *a) {
             y,
             a->window_width,
             a->window_height,
-            2,
+            0,
             CopyFromParent,
             CopyFromParent,
             CopyFromParent,
             CWOverrideRedirect | CWBackPixel | CWEventMask,
             &wa);
-
-        XSetWindowBorder(a->display, a->window, BORDER_COLOR);
 
         XGrabKeyboard(a->display, root, True, GrabModeAsync, GrabModeAsync, CurrentTime);
         XMapRaised(a->display, a->window);
@@ -118,7 +116,7 @@ int app_init(App *a) {
         XftColorAllocValue(a->display, a->visual, a->colormap, &foreground_color, &a->colors[1]);
 
         a->gc = DefaultGC(a->display, 0);
-        XSetLineAttributes(a->display, a->gc, PADDING, LineSolid, CapRound, JoinRound);
+        XSetLineAttributes(a->display, a->gc, BORDER, LineSolid, CapRound, JoinRound);
 
         a->draw = XftDrawCreate(a->display, a->window, a->visual, a->colormap);
         if (!a->draw) {
@@ -162,42 +160,35 @@ void app_free(App *a) {
 
 void app_line(App *a, int x, int y, Str str, XftColor *color) {
     y += a->font->ascent + (a->item_height - a->font_height) / 2;
-    XftDrawString8(a->draw, color, a->font, x, y, (const FcChar8 *)str.data, str.size);
+    XftDrawString8(a->draw, color, a->font, x, y, (const FcChar8 *) str.data, str.size);
 }
 
 void app_draw(App *a) {
     XClearWindow(a->display, a->window);
-    XSetForeground(a->display, a->gc, HIGHLIGHT_COLOR);
 
-    int y = PADDING;
+    int y = BORDER;
     int prompt_width = 0;
     for (size_t i = 0; i < a->prompt.count; i++) {
         prompt_width += a->font_widths[a->prompt.data[i] - 32];
     }
 
-    int matches_found = a->items.count && !a->fzy.matches.count;
-    if (matches_found) {
+    const int no_matches_found = a->items.count && !a->fzy.matches.count;
+    if (no_matches_found) {
         XSetForeground(a->display, a->gc, NOMATCH_COLOR);
         XFillRectangle(
-            a->display,
-            a->window,
-            a->gc,
-            0,
-            0,
-            prompt_width + PADDING * 2,
-            a->item_height + PADDING);
+            a->display, a->window, a->gc, BORDER, BORDER, prompt_width + BORDER, a->item_height);
     }
     app_line(
-        a, PADDING * 2, y, str_new(a->prompt.data, a->prompt.count), &a->colors[!matches_found]);
+        a, BORDER * 2, y, str_new(a->prompt.data, a->prompt.count), &a->colors[!no_matches_found]);
 
-    int item_offset = (a->item_height - a->font_height) / 2;
+    const int item_offset = (a->item_height - a->font_height) / 2;
     XSetForeground(a->display, a->gc, FOREGROUND_COLOR);
     XFillRectangle(
         a->display,
         a->window,
         a->gc,
-        prompt_width + PADDING * 2 + 1,
-        item_offset + PADDING,
+        prompt_width + BORDER * 2 + 1,
+        item_offset + BORDER,
         1,
         a->font_height);
 
@@ -208,16 +199,16 @@ void app_draw(App *a) {
             a->window,
             a->gc,
             0,
-            (a->current + 1 - a->anchor) * a->item_height + PADDING,
+            (a->current + 1 - a->anchor) * a->item_height + BORDER,
             a->window_width,
             a->item_height);
 
         y += a->item_height;
         for (size_t i = 0; i < min(a->fzy.matches.count - a->anchor, ITEMS); ++i) {
-            Match match = a->fzy.matches.data[a->anchor + i];
-            app_line(a, PADDING * 2, y, match.str, &a->colors[1]);
+            const Match match = a->fzy.matches.data[a->anchor + i];
+            app_line(a, BORDER * 2, y, match.str, &a->colors[1]);
 
-            for (size_t j = 0, p = 0, x = PADDING * 2; j < a->prompt.count; j++) {
+            for (size_t j = 0, p = 0, x = BORDER * 2; j < a->prompt.count; j++) {
                 size_t k = match.positions[j];
                 while (p < k) {
                     x += a->font_widths[match.str.data[p++] - 32];
@@ -233,6 +224,16 @@ void app_draw(App *a) {
             y += a->item_height;
         }
     }
+
+    XSetForeground(a->display, a->gc, BORDER_COLOR);
+    XDrawRectangle(
+        a->display,
+        a->window,
+        a->gc,
+        BORDER / 2,
+        BORDER / 2,
+        a->window_width - BORDER,
+        a->window_height - BORDER);
 }
 
 void app_sync(App *a) {
@@ -292,13 +293,13 @@ void app_loop(App *a) {
             break;
 
         case VisibilityNotify:
-            if (((XVisibilityEvent *)&event)->state != VisibilityUnobscured) {
+            if (((XVisibilityEvent *) &event)->state != VisibilityUnobscured) {
                 XRaiseWindow(a->display, a->window);
             }
             break;
 
         case ConfigureNotify:
-            if (((XConfigureEvent *)&event)->window != a->window) {
+            if (((XConfigureEvent *) &event)->window != a->window) {
                 XRaiseWindow(a->display, a->window);
             }
             break;
@@ -320,7 +321,7 @@ void app_loop(App *a) {
                 const size_t index = event.xbutton.y / a->item_height;
                 if (index && a->anchor + index < a->fzy.matches.count + 1) {
                     Str current = a->fzy.matches.data[a->anchor + index - 1].str;
-                    printf("%.*s\n", (int)current.size, current.data);
+                    printf("%.*s\n", (int) current.size, current.data);
                     return;
                 }
             }
@@ -351,7 +352,7 @@ void app_loop(App *a) {
 
                 case 'j':
                     if (a->prompt.count) {
-                        printf("%.*s\n", (int)a->prompt.count, a->prompt.data);
+                        printf("%.*s\n", (int) a->prompt.count, a->prompt.data);
                     }
                     return;
                 }
@@ -371,7 +372,7 @@ void app_loop(App *a) {
                 case XK_Return:
                     if (a->fzy.matches.count) {
                         Str current = a->fzy.matches.data[a->current].str;
-                        printf("%.*s\n", (int)current.size, current.data);
+                        printf("%.*s\n", (int) current.size, current.data);
                     }
                     return;
 

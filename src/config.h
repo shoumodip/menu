@@ -3,7 +3,7 @@
 
 #define FONT "JetBrains Mono:size=13"
 #define ITEMS 10
-#define PADDING 1
+#define BORDER 2
 
 #define MATCH_COLOR 0xFFA9B665
 #define BORDER_COLOR 0xFF928374
