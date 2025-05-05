@@ -5,19 +5,20 @@
 #include <X11/Xlib.h>
 
 #include "fzy.h"
+#include "prompt.h"
 
 typedef struct {
     size_t anchor;
     size_t current;
     DynamicArray(Str) items;
     DynamicArray(char) buffer;
-    DynamicArray(char) prompt;
 
-    Fzy fzy;
+    Fzy    fzy;
+    Prompt prompt;
 
-    GC gc;
-    Window window;
-    Visual *visual;
+    GC       gc;
+    Window   window;
+    Visual  *visual;
     Display *display;
     Colormap colormap;
 
@@ -32,11 +33,11 @@ typedef struct {
     int window_width;
     int window_height;
 
-    int revert_return;
+    int    revert_return;
     Window revert_window;
 } App;
 
-int app_init(App *a);
+int  app_init(App *a);
 void app_free(App *a);
 void app_loop(App *a);
 

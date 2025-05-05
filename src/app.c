@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "app.h"
 #include "config.h"
@@ -181,14 +182,23 @@ void app_draw(App *a) {
     app_line(
         a, BORDER * 2, y, str_new(a->prompt.data, a->prompt.count), &a->colors[!no_matches_found]);
 
-    const int item_offset = (a->item_height - a->font_height) / 2;
-    XSetForeground(a->display, a->gc, FOREGROUND_COLOR);
+    int cursor_width = 0;
+    for (size_t i = 0; i < a->prompt.cursor; i++) {
+        cursor_width += a->font_widths[a->prompt.data[i] - 32];
+    }
+
+    if (no_matches_found && a->prompt.cursor < a->prompt.count) {
+        XSetForeground(a->display, a->gc, BACKGROUND_COLOR);
+    } else {
+        XSetForeground(a->display, a->gc, FOREGROUND_COLOR);
+    }
+
     XFillRectangle(
         a->display,
         a->window,
         a->gc,
-        prompt_width + BORDER * 2 + 1,
-        item_offset + BORDER,
+        cursor_width + BORDER * 2 + 1,
+        (a->item_height - a->font_height) / 2 + BORDER,
         1,
         a->font_height);
 
@@ -319,10 +329,27 @@ void app_loop(App *a) {
         case ButtonRelease:
             if (event.xbutton.button == Button1) {
                 const size_t index = event.xbutton.y / a->item_height;
-                if (index && a->anchor + index < a->fzy.matches.count + 1) {
-                    Str current = a->fzy.matches.data[a->anchor + index - 1].str;
-                    printf("%.*s\n", (int) current.size, current.data);
-                    return;
+                if (index) {
+                    if (a->anchor + index < a->fzy.matches.count + 1) {
+                        Str current = a->fzy.matches.data[a->anchor + index - 1].str;
+                        printf("%.*s\n", (int) current.size, current.data);
+                        return;
+                    }
+                } else if (event.xbutton.x >= BORDER * 2) {
+                    const size_t pos = event.xbutton.x - BORDER * 2;
+
+                    a->prompt.cursor = a->prompt.count;
+                    for (size_t i = 0, acc = 0; i < a->prompt.cursor; i++) {
+                        const size_t width = a->font_widths[a->prompt.data[i] - 32];
+                        if (acc + width / 2 >= pos) {
+                            a->prompt.cursor = i;
+                            break;
+                        }
+
+                        acc += width;
+                    }
+
+                    app_draw(a);
                 }
             }
             break;
@@ -341,6 +368,41 @@ void app_loop(App *a) {
                 switch (key) {
                 case 'c':
                     return;
+
+                case 'f':
+                    prompt_next_char(&a->prompt);
+                    app_draw(a);
+                    break;
+
+                case 'b':
+                    prompt_prev_char(&a->prompt);
+                    app_draw(a);
+                    break;
+
+                case 'a':
+                    prompt_start(&a->prompt);
+                    app_draw(a);
+                    break;
+
+                case 'e':
+                    prompt_end(&a->prompt);
+                    app_draw(a);
+                    break;
+
+                case 'd':
+                    prompt_delete(&a->prompt, prompt_next_char);
+                    app_sync(a);
+                    break;
+
+                case 'k':
+                    prompt_delete(&a->prompt, prompt_end);
+                    app_sync(a);
+                    break;
+
+                case 'u':
+                    prompt_delete(&a->prompt, prompt_start);
+                    app_sync(a);
+                    break;
 
                 case 'n':
                     app_next(a);
@@ -379,18 +441,40 @@ void app_loop(App *a) {
                 case XK_BackSpace:
                     if (a->prompt.count) {
                         if (event.xkey.state & Mod1Mask) {
-                            while (a->prompt.count &&
-                                   !isalnum(a->prompt.data[a->prompt.count - 1])) {
-                                a->prompt.count--;
-                            }
-
-                            while (a->prompt.count &&
-                                   isalnum(a->prompt.data[a->prompt.count - 1])) {
-                                a->prompt.count--;
-                            }
+                            prompt_delete(&a->prompt, prompt_prev_word);
                         } else {
-                            a->prompt.count--;
+                            prompt_delete(&a->prompt, prompt_prev_char);
                         }
+                        app_sync(a);
+                    }
+                    break;
+
+                case 'd':
+                    if (event.xkey.state & Mod1Mask) {
+                        prompt_delete(&a->prompt, prompt_next_word);
+                        app_draw(a);
+                    } else {
+                        prompt_insert(&a->prompt, key);
+                        app_sync(a);
+                    }
+                    break;
+
+                case 'f':
+                    if (event.xkey.state & Mod1Mask) {
+                        prompt_next_word(&a->prompt);
+                        app_draw(a);
+                    } else {
+                        prompt_insert(&a->prompt, key);
+                        app_sync(a);
+                    }
+                    break;
+
+                case 'b':
+                    if (event.xkey.state & Mod1Mask) {
+                        prompt_prev_word(&a->prompt);
+                        app_draw(a);
+                    } else {
+                        prompt_insert(&a->prompt, key);
                         app_sync(a);
                     }
                     break;
@@ -398,7 +482,7 @@ void app_loop(App *a) {
                 default:
                     key = XLookupKeysym(&event.xkey, event.xkey.state & ShiftMask);
                     if (32 <= key && key < 127) {
-                        da_append(&a->prompt, key);
+                        prompt_insert(&a->prompt, key);
                         app_sync(a);
                     }
                     break;

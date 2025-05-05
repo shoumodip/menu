@@ -3,9 +3,8 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "common.h"
 #include "fzy.h"
-
-#define max(a, b) (((a) > (b)) ? (a) : (b))
 
 #define copy(data, a, b, v)                                                                        \
     do {                                                                                           \
@@ -17,14 +16,14 @@
 #define SCORE_MAX INFINITY
 #define SCORE_MIN -INFINITY
 
-#define SCORE_GAP_INNER -0.01
-#define SCORE_GAP_LEADING -0.005
+#define SCORE_GAP_INNER    -0.01
+#define SCORE_GAP_LEADING  -0.005
 #define SCORE_GAP_TRAILING -0.005
 
-#define SCORE_MATCH_DOT 0.6
-#define SCORE_MATCH_WORD 0.8
-#define SCORE_MATCH_SLASH 0.9
-#define SCORE_MATCH_CAPITAL 0.7
+#define SCORE_MATCH_DOT         0.6
+#define SCORE_MATCH_WORD        0.8
+#define SCORE_MATCH_SLASH       0.9
+#define SCORE_MATCH_CAPITAL     0.7
 #define SCORE_MATCH_CONSECUTIVE 1.0
 
 static double bonus_states[3][256] = {
@@ -48,8 +47,8 @@ static double bonus_states[3][256] = {
 static size_t bonus_index[256];
 
 static int match_compare(const void *a, const void *b) {
-    double sa = ((Match *)a)->score;
-    double sb = ((Match *)b)->score;
+    double sa = ((Match *) a)->score;
+    double sb = ((Match *) b)->score;
     return (sa < sb) - (sa > sb);
 }
 
